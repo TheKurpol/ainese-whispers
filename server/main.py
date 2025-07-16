@@ -32,7 +32,13 @@ def create_party():
     if party_id in rooms:
         return jsonify({'error': f'Party {party_id} already exists!'}), 409
     rooms[party_id] = Party(party_id)
+    print(len(rooms))
     return jsonify({'message': f'Party {party_id} created successfully!'}), 201
+
+@app.route('/party_exists/<party_id>', methods=['GET'])
+def party_exists(party_id):
+    exists = party_id in rooms
+    return jsonify({'exists': exists})
     
 
 if __name__ == '__main__':

@@ -31,7 +31,6 @@ function Lobby() {
 
   useEffect(() => {
     const newSocket: TypedSocket = io(SOCKET_SERVER_URL)
-
     newSocket.on('connect', () => {
       console.log('You are connected to the Socket.IO server in Lobby.')
     })

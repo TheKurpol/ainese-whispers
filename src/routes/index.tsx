@@ -43,6 +43,17 @@ function App() {
     throw new Error('Failed to create a new party after multiple attempts.')
   }
 
+  async function checkPartyExists(partyIdToCheck: string): Promise<boolean> {
+    const response = await fetch(
+      `http://localhost:5000/party_exists/${partyIdToCheck}`,
+    )
+    if (!response.ok) {
+      throw new Error('Failed to check party existence.')
+    }
+    const data = await response.json()
+    return data.exists
+  }
+
   function handleJoinParty(newParty: boolean) {
     if (!nickname) {
       setMessage('Please enter a nickname.')
@@ -66,10 +77,20 @@ function App() {
         setMessage('Please enter a Party ID.')
         return
       }
-      navigate({
-        to: '/lobby',
-        search: { partyId: partyId, nickname: nickname },
-      })
+      checkPartyExists(partyId)
+        .then((exists) => {
+          if (exists) {
+            navigate({
+              to: '/lobby',
+              search: { partyId: partyId, nickname: nickname },
+            })
+          } else {
+            setMessage('Party does not exist.')
+          }
+        })
+        .catch(() => {
+          setMessage('Failed to check party existence. Please try again later.')
+        })
     }
   }
 
