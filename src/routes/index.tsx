@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import { generateRandomPartyId } from './utils'
+import type { CreatePartyPayload } from './sharedTypes'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { SocketContext } from '@/lib/reactUtils'
 
 export const Route = createFileRoute('/')({
   component: App,
@@ -14,44 +15,38 @@ function App() {
   const [nickname, setNickname] = useLocalStorage<string>('nickname', '')
   const [partyId, setPartyId] = useState<string>('')
   const [message, setMessage] = useState<string>('')
+  const socket = useContext(SocketContext)
 
   const navigate = useNavigate()
 
-  async function requestNewParty() {
-    const max_attempts = 100
-    let attempts = 0
-    while (attempts < max_attempts) {
-      const newPartyId = generateRandomPartyId()
-      console.log('Generated new party ID:', newPartyId)
-      const response = await fetch('http://localhost:5000/create_party', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ partyId: newPartyId }),
-      })
-      if (!response.ok) {
-        if (response.status === 409) {
-          attempts++
-          continue
-        }
+  // TODO Zamienić na useCallback
+
+  function requestNewParty() {
+    socket?.emit('create_party', (payload: CreatePartyPayload) => {
+      if (payload.error) {
+        setMessage('Failed to create party. Try again later.')
+      } else {
+        setPartyId(payload.partyId)
+        navigate({
+          to: '/lobby',
+          search: { partyId: payload.partyId, nickname: nickname },
+        })
       }
-      if (response.ok) {
-        return newPartyId
-      }
-    }
-    throw new Error('Failed to create a new party after multiple attempts.')
+    })
   }
 
-  async function checkPartyExists(partyIdToCheck: string): Promise<boolean> {
-    const response = await fetch(
-      `http://localhost:5000/party_exists/${partyIdToCheck}`,
-    )
-    if (!response.ok) {
-      throw new Error('Failed to check party existence.')
-    }
-    const data = await response.json()
-    return data.exists
+  function checkPartyExists(partyIdToCheck: string) {
+    socket?.emit('check_party_exists', partyIdToCheck, (exists: boolean) => {
+      console.log(`Party ${partyIdToCheck} exists:`, exists)
+      if (exists) {
+        navigate({
+          to: '/lobby',
+          search: { partyId: partyIdToCheck, nickname: nickname },
+        })
+      } else {
+        setMessage('Party does not exist. Please check the Party ID.')
+      }
+    })
   }
 
   function handleJoinParty(newParty: boolean) {
@@ -61,16 +56,6 @@ function App() {
     }
     if (newParty) {
       requestNewParty()
-        .then((createdPartyId) => {
-          console.log('New party created with ID:', createdPartyId)
-          navigate({
-            to: '/lobby',
-            search: { partyId: createdPartyId, nickname: nickname },
-          })
-        })
-        .catch(() => {
-          setMessage('Failed to create a new party. Please try again later.')
-        })
     }
     if (!newParty) {
       if (!partyId) {
@@ -78,19 +63,6 @@ function App() {
         return
       }
       checkPartyExists(partyId)
-        .then((exists) => {
-          if (exists) {
-            navigate({
-              to: '/lobby',
-              search: { partyId: partyId, nickname: nickname },
-            })
-          } else {
-            setMessage('Party does not exist.')
-          }
-        })
-        .catch(() => {
-          setMessage('Failed to check party existence. Please try again later.')
-        })
     }
   }
 

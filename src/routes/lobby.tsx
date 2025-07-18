@@ -1,20 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { set, z } from 'zod'
-import { io } from 'socket.io-client'
-import { useEffect, useState } from 'react'
+import { z } from 'zod'
+import { useContext, useState } from 'react'
 import type { Socket } from 'socket.io-client'
-import type {
-  ClientToServerEvents,
-  IWelcomeMessagePayload,
-  ServerToClientEvents,
-} from './sharedTypes'
-
-const SOCKET_SERVER_URL = 'http://localhost:5000'
-type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
+import type { ClientToServerEvents, ServerToClientEvents } from './sharedTypes'
+import { SocketContext } from '@/lib/reactUtils'
 
 const lobbySearchSchema = z.object({
   partyId: z.string().min(1, 'Party ID is required'),
-  nickname: z.string().min(1, 'Mickname is required'),
+  nickname: z.string().min(1, 'Nickname is required'),
 })
 
 export const Route = createFileRoute('/lobby')({
@@ -24,37 +17,12 @@ export const Route = createFileRoute('/lobby')({
   component: Lobby,
 })
 
+// TODO: Przeczytać o useCallback
+
 function Lobby() {
   const [message, set_message] = useState<string>('paweł')
   const { partyId, nickname } = Route.useSearch()
-  const [socket, set_socket] = useState<TypedSocket | null>(null)
-
-  useEffect(() => {
-    const newSocket: TypedSocket = io(SOCKET_SERVER_URL)
-    newSocket.on('connect', () => {
-      console.log('You are connected to the Socket.IO server in Lobby.')
-    })
-
-    newSocket.on('disconnect', () => {
-      console.log('You have disconnected from the Socket.IO server in Lobby.')
-    })
-
-    newSocket.on('welcome', (data: IWelcomeMessagePayload) => {
-      console.log('Received welcome message:', data.content)
-      set_message(partyId)
-    })
-
-    newSocket.on('connect_error', (error: any) => {
-      console.error('Socket.IO error:', error)
-      set_message('An error occurred while connecting to the server.')
-    })
-
-    set_socket(newSocket)
-
-    return () => {
-      newSocket.disconnect()
-    }
-  }, [])
+  const socket = useContext(SocketContext)
 
   return (
     <div>
