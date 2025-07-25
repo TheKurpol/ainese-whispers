@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useContext, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import type { CreatePartyPayload } from './sharedTypes'
 import { Button } from '@/components/ui/button'
@@ -21,7 +21,7 @@ function App() {
 
   // TODO Zamienić na useCallback
 
-  function requestNewParty() {
+  const requestNewParty = useCallback(() => {
     socket?.emit('create_party', (payload: CreatePartyPayload) => {
       if (payload.error) {
         setMessage('Failed to create party. Try again later.')
@@ -33,38 +33,44 @@ function App() {
         })
       }
     })
-  }
+  }, [socket, navigate, nickname])
 
-  function checkPartyExists(partyIdToCheck: string) {
-    socket?.emit('check_party_exists', partyIdToCheck, (exists: boolean) => {
-      console.log(`Party ${partyIdToCheck} exists:`, exists)
-      if (exists) {
-        navigate({
-          to: '/lobby',
-          search: { partyId: partyIdToCheck, nickname: nickname },
-        })
-      } else {
-        setMessage('Party does not exist. Please check the Party ID.')
-      }
-    })
-  }
+  const checkPartyExists = useCallback(
+    (partyIdToCheck: string) => {
+      socket?.emit('check_party_exists', partyIdToCheck, (exists: boolean) => {
+        console.log(`Party ${partyIdToCheck} exists:`, exists)
+        if (exists) {
+          navigate({
+            to: '/lobby',
+            search: { partyId: partyIdToCheck, nickname: nickname },
+          })
+        } else {
+          setMessage('Party does not exist. Please check the Party ID.')
+        }
+      })
+    },
+    [socket, navigate, nickname],
+  )
 
-  function handleJoinParty(newParty: boolean) {
-    if (!nickname) {
-      setMessage('Please enter a nickname.')
-      return
-    }
-    if (newParty) {
-      requestNewParty()
-    }
-    if (!newParty) {
-      if (!partyId) {
-        setMessage('Please enter a Party ID.')
+  const handleJoinParty = useCallback(
+    (newParty: boolean) => {
+      if (!nickname) {
+        setMessage('Please enter a nickname.')
         return
       }
-      checkPartyExists(partyId)
-    }
-  }
+      if (newParty) {
+        requestNewParty()
+      }
+      if (!newParty) {
+        if (!partyId) {
+          setMessage('Please enter a Party ID.')
+          return
+        }
+        checkPartyExists(partyId)
+      }
+    },
+    [nickname, partyId, requestNewParty, checkPartyExists],
+  )
 
   return (
     <>

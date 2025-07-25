@@ -1,9 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { map, z } from 'zod'
 import { useContext, useState } from 'react'
+import { ScrollArea } from '@radix-ui/react-scroll-area'
+import type { Key } from 'react'
 import type { Socket } from 'socket.io-client'
 import type { ClientToServerEvents, ServerToClientEvents } from './sharedTypes'
 import { SocketContext } from '@/lib/reactUtils'
+import { Card } from '@/components/ui/card'
 
 const lobbySearchSchema = z.object({
   partyId: z.string().min(1, 'Party ID is required'),
@@ -17,19 +20,32 @@ export const Route = createFileRoute('/lobby')({
   component: Lobby,
 })
 
-// TODO: Przeczytać o useCallback
+function PlayerCard({ nickname }: { nickname: string }) {
+  return (
+    <Card className="p-4">
+      <p className="text-lg font-semibold">{nickname}</p>
+    </Card>
+  )
+}
 
 function Lobby() {
   const [message, set_message] = useState<string>('paweł')
+  const [players, setPlayers] = useState<Array<string>>([])
   const { partyId, nickname } = Route.useSearch()
   const socket = useContext(SocketContext)
 
   return (
-    <div>
-      <h1>Lobby</h1>
-      <p>Party ID: {partyId}</p>
-      <p>Nickname: {nickname}</p>
-      <p>{message}</p>
+    <div className="flex justify-center">
+      <Card>
+        <p className="text-2xl">
+          <span className="font-bold">Party ID: </span>
+          {partyId}
+        </p>
+        <p className="text-2xl font-bold">Players:</p>
+        <ScrollArea className="h-64 w-80">
+          {/** TODO: mapuj graczy */}
+        </ScrollArea>
+      </Card>
     </div>
   )
 }

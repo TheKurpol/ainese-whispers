@@ -1,12 +1,12 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { Provider } from '@/lib/reactUtils'
+import { SocketProvider } from '@/lib/reactUtils'
 
 export const Route = createRootRoute({
   component: () => (
     <>
-      <Provider>
+      <SocketProvider>
         <Outlet />
-      </Provider>
+      </SocketProvider>
     </>
   ),
 })
