@@ -9,7 +9,7 @@ import { SocketContext } from '@/lib/reactUtils'
 import { Card } from '@/components/ui/card'
 
 const lobbySearchSchema = z.object({
-  partyId: z.string().min(1, 'Party ID is required'),
+  id: z.string().min(1, 'Party ID is required'),
   nickname: z.string().min(1, 'Nickname is required'),
 })
 
@@ -31,7 +31,7 @@ function PlayerCard({ nickname }: { nickname: string }) {
 function Lobby() {
   const [message, set_message] = useState<string>('paweł')
   const [players, setPlayers] = useState<Array<string>>([])
-  const { partyId, nickname } = Route.useSearch()
+  const { id: partyId, nickname } = Route.useSearch()
   const socket = useContext(SocketContext)
 
   return (
@@ -43,7 +43,9 @@ function Lobby() {
         </p>
         <p className="text-2xl font-bold">Players:</p>
         <ScrollArea className="h-64 w-80">
-          {/** TODO: mapuj graczy */}
+          {players.map((player: string, index: Key) => (
+            <PlayerCard key={index} nickname={player} />
+          ))}
         </ScrollArea>
       </Card>
     </div>

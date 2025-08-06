@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useCallback, useContext, useState } from 'react'
+import { useContext, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import type { CreatePartyPayload } from './sharedTypes'
+import type { CreatePartyPayload, ErrorMessage } from './sharedTypes'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -19,58 +19,81 @@ function App() {
 
   const navigate = useNavigate()
 
-  // TODO Zamienić na useCallback
-
-  const requestNewParty = useCallback(() => {
-    socket?.emit('create_party', (payload: CreatePartyPayload) => {
-      if (payload.error) {
-        setMessage('Failed to create party. Try again later.')
-      } else {
-        setPartyId(payload.partyId)
-        navigate({
-          to: '/lobby',
-          search: { partyId: payload.partyId, nickname: nickname },
-        })
-      }
-    })
-  }, [socket, navigate, nickname])
-
-  const checkPartyExists = useCallback(
-    (partyIdToCheck: string) => {
-      socket?.emit('check_party_exists', partyIdToCheck, (exists: boolean) => {
-        console.log(`Party ${partyIdToCheck} exists:`, exists)
-        if (exists) {
-          navigate({
-            to: '/lobby',
-            search: { partyId: partyIdToCheck, nickname: nickname },
-          })
-        } else {
-          setMessage('Party does not exist. Please check the Party ID.')
-        }
-      })
-    },
-    [socket, navigate, nickname],
-  )
-
-  const handleJoinParty = useCallback(
-    (newParty: boolean) => {
-      if (!nickname) {
-        setMessage('Please enter a nickname.')
+  function requestParty() {
+    return new Promise<string>((resolve, reject) => {
+      if (socket?.disconnected) {
+        reject('Unable to connect to the server. Please try again later.')
         return
       }
-      if (newParty) {
-        requestNewParty()
+      if (!nickname) {
+        reject('Please enter a nickname.')
+        return
       }
-      if (!newParty) {
-        if (!partyId) {
-          setMessage('Please enter a Party ID.')
-          return
+      socket?.emit('create_party', nickname, (payload: CreatePartyPayload) => {
+        if (payload.error) {
+          reject('Failed to create party. Try again later')
+        } else {
+          resolve(payload.partyId)
         }
-        checkPartyExists(partyId)
+      })
+    })
+  }
+
+  function partyExists(partyIdToCheck: string) {
+    return new Promise<void>((resolve, reject) => {
+      if (!partyIdToCheck) {
+        reject('Please enter a Party ID.')
+        return
       }
-    },
-    [nickname, partyId, requestNewParty, checkPartyExists],
-  )
+      if (socket?.disconnected) {
+        reject('Unable to connect to the server. Please try again later.')
+        return
+      }
+      if (!nickname) {
+        reject('Please enter a nickname.')
+        return
+      }
+      socket?.emit('check_party_exists', partyIdToCheck, (exists: boolean) => {
+        if (exists) {
+          resolve()
+        } else {
+          reject('Party does not exist. Please check the Party ID.')
+        }
+      })
+    })
+  }
+
+  function joinParty(id: string) {
+    return new Promise<void>((resolve, reject) => {
+      socket?.emit('join_party', id, nickname, (error: ErrorMessage | null) => {
+        if (!error) {
+          navigate({
+            to: '/lobby',
+            search: { id, nickname },
+            // @ts-ignore We mask the search params so we can't pass the 'search' option
+            mask: { to: '/lobby' },
+          })
+          resolve()
+        } else {
+          reject(error.message)
+        }
+      })
+    })
+  }
+
+  async function handleJoinParty(newParty: boolean) {
+    let id = partyId
+    try {
+      if (newParty) {
+        id = await requestParty()
+      }
+      await partyExists(id)
+      await joinParty(id)
+    } catch (error) {
+      setPartyId(id)
+      setMessage(error instanceof Error ? error.message : String(error))
+    }
+  }
 
   return (
     <>
