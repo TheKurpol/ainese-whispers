@@ -13,6 +13,7 @@ app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)
 CORS(app)
 
 rooms = {}
+clients_map = {}
 
 @sio.event
 def connect(sid, environ):
@@ -24,7 +25,7 @@ def disconnect(sid):
     print(f'Client disconnected: {sid}')
 
 @sio.event
-def create_party(sid, creator_nickname):
+def create_party(sid):
     new_party_id = generate_random_party_id()
     if new_party_id in rooms:
         return {'error': f'Party {new_party_id} already exists!'}
@@ -45,12 +46,41 @@ def join_party(sid, party_id, nickname):
     if party_id not in rooms:
         return {'message': 'Party does not exist.'}
     party = rooms[party_id]
+    clients_map[sid] = party_id
+    sio.enter_room(sid, party_id)
     party.add_player(sid, nickname)
-    print(len(party.players))
+    if party.get_players_count() == 1:
+        party.set_owner(sid)
     return
+
+@sio.event
+def get_players(sid):
+    party_id = clients_map.get(sid)
+    if not party_id or party_id not in rooms:
+        return {'error': 'You are not in a party.'}
+    party = rooms[party_id]
+    players = party.get_player_list()
+    sio.emit('send_player_list', players, to=sid)
+
+@sio.event
+def check_my_ownership(sid, party_id):
+    print(f'Checking ownership for party {party_id} and client {sid}')
+    if party_id not in rooms:
+        return False
+    party = rooms[party_id]
+    is_owner = party.is_sid_owner(sid)
+    return is_owner
+
+@sio.event
+def is_owner(sid, party_id, nickname):
+    print(f'Checking if {nickname} is owner of party {party_id} for client {sid}')
+    if party_id not in rooms:
+        return {'error': 'Party does not exist.'}
+    party = rooms[party_id]
+    is_owner = party.is_nickname_owner(nickname)
+    return is_owner
 
 if __name__ == '__main__':
     eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
 
-# TODO: Pomyśleć jak przekazywać graczom wiadomości o zmianach w party, czy osobne rodzaje eventów dla różnych zmian?
-# TODO: Jak przekazać frontendowi ownera, że jest ownerem i jak dać mu dodatkowe uprawnienia?
+# TODO: Handle situations where two players have the same nickname

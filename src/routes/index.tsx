@@ -29,7 +29,7 @@ function App() {
         reject('Please enter a nickname.')
         return
       }
-      socket?.emit('create_party', nickname, (payload: CreatePartyPayload) => {
+      socket?.emit('create_party', (payload: CreatePartyPayload) => {
         if (payload.error) {
           reject('Failed to create party. Try again later')
         } else {
