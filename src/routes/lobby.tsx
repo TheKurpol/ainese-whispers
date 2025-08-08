@@ -1,10 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { ScrollArea } from '@radix-ui/react-scroll-area'
-import type { Player } from './sharedTypes'
+import type { Player, PlayerListPayload } from './sharedTypes'
 import { SocketContext } from '@/lib/reactUtils'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const PartyIdContext = createContext<string>('')
 
@@ -20,62 +22,67 @@ export const Route = createFileRoute('/lobby')({
   component: Lobby,
 })
 
-function PlayerCard({ nickname }: { nickname: string }) {
-  const socket = useContext(SocketContext)
-  const [amIOwner, setAmIOwner] = useState<boolean>(false)
-  const [isOwner, setIsOwner] = useState<boolean>(false)
-  const partyId = useContext(PartyIdContext)
-
-  useEffect(() => {
-    if (!socket) return
-
-    socket.emit(
-      'check_my_ownership',
-      partyId,
-      (amIOwnerVerification: boolean) => {
-        setAmIOwner(amIOwnerVerification)
-      },
-    )
-
-    socket.emit(
-      'is_owner',
-      partyId,
-      nickname,
-      (isOwnerVerification: boolean) => {
-        setIsOwner(isOwnerVerification)
-      },
-    )
-  }, [socket])
-
-  return (
-    <Card className="p-4">
-      <p className="text-lg font-semibold">{nickname}</p>
-      {amIOwner && (
-        <p className="text-sm text-gray-500">
-          You are the owner of this party!
-        </p>
-      )}
-      {isOwner && (
-        <p className="text-sm text-green-500">
-          This is the owner of the party!
-        </p>
-      )}
-    </Card>
-  )
-}
-
 function Lobby() {
-  const [message, set_message] = useState<string>('paweł')
   const [players, setPlayers] = useState<Array<Player>>([])
   const { id: partyId, nickname } = Route.useSearch()
+  const [ownerSid, setOwnerSid] = useState<string | null>(null)
   const socket = useContext(SocketContext)
+
+  const navigate = useNavigate()
 
   // TODO: Save socket connection even after page reload
 
+  function PlayerCard({
+    playerNickname,
+    sid,
+    mySid,
+  }: {
+    playerNickname: string
+    sid: string
+    mySid: string
+  }) {
+    function handleKick() {
+      if (!socket) return
+      socket.emit('kick_player', partyId, sid)
+    }
+
+    return (
+      <Card className="flex-row p-4">
+        <p className="text-2xl font-semibold">{playerNickname}</p>
+        {mySid === ownerSid && sid !== mySid && (
+          <p className="">
+            <Button className="ml-2 h-6 px-2 py-1 text-xs" onClick={handleKick}>
+              X
+            </Button>
+          </p>
+        )}
+        {sid === ownerSid && (
+          <p className="text-sm text-green-500">
+            <Avatar></Avatar>
+          </p>
+        )}
+      </Card>
+    )
+  }
+
+  function goBackToIndex(goodbyeMessage: string) {
+    alert(goodbyeMessage)
+    navigate({
+      to: '/',
+    })
+  }
+
   useEffect(() => {
-    function handlePlayerList(list: Array<Player>) {
-      console.log('Received player list:', list)
-      setPlayers(list)
+    function handlePlayerList(payload: PlayerListPayload) {
+      console.log('Received player list:', payload)
+      if (
+        socket &&
+        !payload.list.some((player: Player) => player.sid === socket.id)
+      ) {
+        goBackToIndex("You've been kicked out of the party")
+      }
+      setPlayers(payload.list)
+      setOwnerSid(payload.ownerSid)
     }
 
     if (!socket) {
@@ -102,7 +109,12 @@ function Lobby() {
           <p className="text-2xl font-bold">Players:</p>
           <ScrollArea className="h-64 w-80">
             {players.map((player) => (
-              <PlayerCard key={player.sid} nickname={player.nickname} />
+              <PlayerCard
+                key={player.sid}
+                playerNickname={player.nickname}
+                sid={player.sid}
+                mySid={socket?.id || ''}
+              />
             ))}
           </ScrollArea>
         </Card>

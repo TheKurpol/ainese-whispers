@@ -11,6 +11,11 @@ export interface CreatePartyPayload {
   error: string | null;
 }
 
+export interface PlayerListPayload {
+  list: Array<Player>;
+  ownerSid: string | null;
+}
+
 export interface Player {
   sid: string;
   nickname: string;
@@ -18,7 +23,7 @@ export interface Player {
 
 export interface ServerToClientEvents {
   welcome: (payload: WelcomeMessagePayload) => void;
-  send_player_list: (list: Array<Player> ) => void;
+  send_player_list: (payload: PlayerListPayload) => void;
 }
 
 export interface ClientToServerEvents {
@@ -28,4 +33,5 @@ export interface ClientToServerEvents {
   get_players: () => void;
   check_my_ownership: (partyId: string, callback: (amIOwner: boolean) => void) => void;
   is_owner: (partyId: string, nickname: string, callback: (isOwner: boolean) => void) => void;
+  kick_player: (partyId: string, target_sid: string) => void;
 }

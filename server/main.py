@@ -12,8 +12,8 @@ app = Flask(__name__)
 app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)
 CORS(app)
 
-rooms = {}
-clients_map = {}
+rooms: dict[str, ph.Party] = {}
+clients_map: dict[str, str] = {}
 
 @sio.event
 def connect(sid, environ):
@@ -23,6 +23,10 @@ def connect(sid, environ):
 @sio.event
 def disconnect(sid):
     print(f'Client disconnected: {sid}')
+    party_id = clients_map.pop(sid, None)
+    if party_id and party_id in rooms:
+        party = rooms[party_id]
+        party.remove_player(sid)
 
 @sio.event
 def create_party(sid):
@@ -59,8 +63,7 @@ def get_players(sid):
     if not party_id or party_id not in rooms:
         return {'error': 'You are not in a party.'}
     party = rooms[party_id]
-    players = party.get_player_list()
-    sio.emit('send_player_list', players, to=sid)
+    sio.emit('send_player_list', {'list': party.get_player_list(), 'ownerSid': party.get_owner_sid()}, to=sid)
 
 @sio.event
 def check_my_ownership(sid, party_id):
@@ -68,17 +71,28 @@ def check_my_ownership(sid, party_id):
     if party_id not in rooms:
         return False
     party = rooms[party_id]
-    is_owner = party.is_sid_owner(sid)
+    is_owner = party.is_owner(sid)
     return is_owner
 
 @sio.event
-def is_owner(sid, party_id, nickname):
-    print(f'Checking if {nickname} is owner of party {party_id} for client {sid}')
+def is_owner(sid, party_id, target_sid):
+    print(f'Checking if {target_sid} is owner of party {party_id} for client {sid}')
     if party_id not in rooms:
         return {'error': 'Party does not exist.'}
     party = rooms[party_id]
-    is_owner = party.is_nickname_owner(nickname)
+    is_owner = party.is_owner(target_sid)
     return is_owner
+
+@sio.event
+def kick_player(sid, party_id, target_sid):
+    print(f'Client {sid} is trying to kick {target_sid} from party {party_id}')
+    if party_id not in rooms:
+        return {'error': 'Party does not exist.'}
+    party = rooms[party_id]
+    if not party.is_owner(sid):
+        return {'error': 'Only the owner can kick players.'}
+    party.remove_player(target_sid)
+    return {'success': True}
 
 if __name__ == '__main__':
     eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
