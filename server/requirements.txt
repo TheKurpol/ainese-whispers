@@ -1,3 +1,4 @@
 eventlet
 python-socketio
-Werkzeug
+flask
+flask_cors
