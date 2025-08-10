@@ -50,6 +50,8 @@ def join_party(sid, party_id, nickname):
     if party_id not in rooms:
         return {'message': 'Party does not exist.'}
     party = rooms[party_id]
+    if party.is_game_started:
+        return {'message': 'Game has already started.'}
     clients_map[sid] = party_id
     sio.enter_room(sid, party_id)
     party.add_player(sid, nickname)
@@ -94,7 +96,15 @@ def kick_player(sid, party_id, target_sid):
     party.remove_player(target_sid)
     return {'success': True}
 
+@sio.event
+def start_game(sid, party_id):
+    print(f'Client {sid} is trying to start the game in party {party_id}')
+    if party_id not in rooms:
+        return {'error': 'Party does not exist.'}
+    party = rooms[party_id]
+    if not party.is_owner(sid):
+        return {'error': 'Only the owner can start the game.'}
+    return party.start_game()
+
 if __name__ == '__main__':
     eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
-
-# TODO: Handle situations where two players have the same nickname

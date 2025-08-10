@@ -75,7 +75,7 @@ function App() {
           })
           resolve()
         } else {
-          reject(error.message)
+          reject(error.error)
         }
       })
     })

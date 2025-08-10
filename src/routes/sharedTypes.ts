@@ -3,7 +3,7 @@ export interface WelcomeMessagePayload {
 }
 
 export interface ErrorMessage {
-  message: string;
+  error: string;
 }
 
 export interface CreatePartyPayload {
@@ -24,6 +24,7 @@ export interface Player {
 export interface ServerToClientEvents {
   welcome: (payload: WelcomeMessagePayload) => void;
   send_player_list: (payload: PlayerListPayload) => void;
+  game_started: () => void;
 }
 
 export interface ClientToServerEvents {
@@ -34,4 +35,5 @@ export interface ClientToServerEvents {
   check_my_ownership: (partyId: string, callback: (amIOwner: boolean) => void) => void;
   is_owner: (partyId: string, nickname: string, callback: (isOwner: boolean) => void) => void;
   kick_player: (partyId: string, target_sid: string) => void;
+  start_game: (partyId: string, callback: (error: ErrorMessage | null) => void) => void;
 }
