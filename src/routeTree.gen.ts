@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LobbyRouteImport } from './routes/lobby'
+import { Route as GameRouteImport } from './routes/game'
 import { Route as IndexRouteImport } from './routes/index'
 
 const LobbyRoute = LobbyRouteImport.update({
   id: '/lobby',
   path: '/lobby',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameRoute = GameRouteImport.update({
+  id: '/game',
+  path: '/game',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +31,31 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/game': typeof GameRoute
   '/lobby': typeof LobbyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/game': typeof GameRoute
   '/lobby': typeof LobbyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/game': typeof GameRoute
   '/lobby': typeof LobbyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/lobby'
+  fullPaths: '/' | '/game' | '/lobby'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/lobby'
-  id: '__root__' | '/' | '/lobby'
+  to: '/' | '/game' | '/lobby'
+  id: '__root__' | '/' | '/game' | '/lobby'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GameRoute: typeof GameRoute
   LobbyRoute: typeof LobbyRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/lobby'
       fullPath: '/lobby'
       preLoaderRoute: typeof LobbyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game': {
+      id: '/game'
+      path: '/game'
+      fullPath: '/game'
+      preLoaderRoute: typeof GameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GameRoute: GameRoute,
   LobbyRoute: LobbyRoute,
 }
 export const routeTree = rootRouteImport

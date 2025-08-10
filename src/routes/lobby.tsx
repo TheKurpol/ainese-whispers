@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { ScrollArea } from '@radix-ui/react-scroll-area'
-import type { Player, PlayerListPayload } from './sharedTypes'
+import type { ErrorMessage, Player, PlayerListPayload } from './sharedTypes'
 import { SocketContext } from '@/lib/reactUtils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ function Lobby() {
   const [players, setPlayers] = useState<Array<Player>>([])
   const { id: partyId, nickname } = Route.useSearch()
   const [ownerSid, setOwnerSid] = useState<string | null>(null)
+  const [startGameMessage, setStartGameMessage] = useState<string | null>(null)
   const socket = useContext(SocketContext)
 
   const navigate = useNavigate()
@@ -72,6 +73,12 @@ function Lobby() {
     })
   }
 
+  function handleStartGameError(error: ErrorMessage | null) {
+    if (error) {
+      setStartGameMessage(error.error)
+    }
+  }
+
   useEffect(() => {
     function handlePlayerList(payload: PlayerListPayload) {
       console.log('Received player list:', payload)
@@ -84,7 +91,6 @@ function Lobby() {
       setPlayers(payload.list)
       setOwnerSid(payload.ownerSid)
     }
-
     if (!socket) {
       return
     }
@@ -93,8 +99,15 @@ function Lobby() {
 
     socket.on('send_player_list', handlePlayerList)
 
+    socket.on('game_started', () => {
+      navigate({
+        to: '/game',
+      })
+    })
+
     return () => {
       socket.off('send_player_list')
+      socket.off('game_started')
     }
   }, [socket])
 
@@ -118,6 +131,16 @@ function Lobby() {
             ))}
           </ScrollArea>
         </Card>
+        <div className="flex justify-center">
+          <Button
+            onClick={() =>
+              socket?.emit('start_game', partyId, handleStartGameError)
+            }
+          >
+            Start Game
+          </Button>
+          <h1>{startGameMessage}</h1>
+        </div>
       </div>
     </PartyIdContext.Provider>
   )

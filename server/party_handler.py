@@ -7,6 +7,9 @@ class Party:
         self.messages = []
         self.owner_sid = None
         self.sio = sio
+        self.is_game_started = False
+        self.MIN_PLAYERS = 3
+        self.MAX_PLAYERS = 10
 
     def add_player(self, sid: str, nickname: str):
         if sid in self.players:
@@ -36,6 +39,18 @@ class Party:
             return {'message': f'{self.players[sid]} is now the owner.', 'error': None}
         return {'error': 'Player not found in party.'}
     
+    def start_game(self):
+        print(f'Starting game in party {self.party_id}')
+        if self.is_game_started:
+            return {'error': 'Game has already started.'}
+        if self.get_players_count() < self.MIN_PLAYERS:
+            return {'error': 'Not enough players to start the game.'}
+        if self.get_players_count() > self.MAX_PLAYERS:
+            return {'error': 'Too many players to start the game.'}
+        self.is_game_started = True
+        self.sio.emit('game_started', to=self.party_id)
+        return
+
     def get_player_list(self):
         player_list = [{'sid': sid, 'nickname': nickname} for sid, nickname in self.players.items()]
         return player_list
