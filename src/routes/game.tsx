@@ -14,16 +14,20 @@ STARTING AND HANDLING THE GAME
 */
 
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react';
+import { Waiting } from '@/components/gameComponents';
 
 export const Route = createFileRoute('/game')({
   component: Game,
 })
 
 function Game() {
+  // TODO: Think how to display appropriate components according to game state
+  const [gameState, setGameState] = useState('waiting');
   return (
-    <>
-      <h1>Game Room</h1>
-      <p>Welcome to the game!</p>
-    </>
+    <div>
+      {gameState === 'waiting' && <Waiting/>}
+      {/* Add other game states and their corresponding components here */}
+    </div>
   )
 }

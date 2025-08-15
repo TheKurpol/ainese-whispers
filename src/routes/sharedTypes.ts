@@ -16,6 +16,11 @@ export interface PlayerListPayload {
   ownerSid: string | null;
 }
 
+export interface PlayerLoadedPayload {
+  numLoaded: number;
+  numPlayers: number;
+}
+
 export interface Player {
   sid: string;
   nickname: string;
@@ -24,7 +29,8 @@ export interface Player {
 export interface ServerToClientEvents {
   welcome: (payload: WelcomeMessagePayload) => void;
   send_player_list: (payload: PlayerListPayload) => void;
-  game_started: () => void;
+  game_initialized: () => void;
+  player_loaded: (payload: PlayerLoadedPayload | ErrorMessage) => void;
 }
 
 export interface ClientToServerEvents {
@@ -36,4 +42,5 @@ export interface ClientToServerEvents {
   is_owner: (partyId: string, nickname: string, callback: (isOwner: boolean) => void) => void;
   kick_player: (partyId: string, target_sid: string) => void;
   start_game: (partyId: string, callback: (error: ErrorMessage | null) => void) => void;
+  game_loaded: (callback: (payload: PlayerLoadedPayload | ErrorMessage) => void) => void;
 }

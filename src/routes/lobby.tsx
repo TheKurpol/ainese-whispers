@@ -99,7 +99,7 @@ function Lobby() {
 
     socket.on('send_player_list', handlePlayerList)
 
-    socket.on('game_started', () => {
+    socket.on('game_initialized', () => {
       navigate({
         to: '/game',
       })
@@ -107,7 +107,7 @@ function Lobby() {
 
     return () => {
       socket.off('send_player_list')
-      socket.off('game_started')
+      socket.off('game_initialized')
     }
   }, [socket])
 

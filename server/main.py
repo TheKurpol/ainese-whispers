@@ -3,7 +3,7 @@ import socketio
 import eventlet
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import party_handler as ph
+from party import *
 from utils import generate_random_party_id
 
 
@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)
 CORS(app)
 
-rooms: dict[str, ph.Party] = {}
+rooms: dict[str, Party] = {}
 clients_map: dict[str, str] = {}
 
 @sio.event
@@ -33,7 +33,7 @@ def create_party(sid):
     new_party_id = generate_random_party_id()
     if new_party_id in rooms:
         return {'error': f'Party {new_party_id} already exists!'}
-    rooms[new_party_id] = ph.Party(party_id=new_party_id, sio=sio)
+    rooms[new_party_id] = Party(party_id=new_party_id, sio=sio)
     print(f'Party {new_party_id} created successfully!')
     return {'partyId': new_party_id, 'error': None}
 
@@ -106,5 +106,15 @@ def start_game(sid, party_id):
         return {'error': 'Only the owner can start the game.'}
     return party.start_game()
 
+@sio.event
+def game_loaded(sid):
+    party_id = clients_map.get(sid)
+    if not party_id or party_id not in rooms:
+        return {'error': 'You are not in a party.'}
+    party = rooms[party_id]
+    if party.is_player_loaded(sid):
+        return {'error': 'Player already loaded.'}
+    num_loaded, num_players = party.player_loaded(sid)
+    return {'numLoaded': num_loaded, 'numPlayers': num_players}
 if __name__ == '__main__':
     eventlet.wsgi.server(eventlet.listen(('', 5000)), app)

@@ -1,4 +1,5 @@
 import socketio
+from game import *
 
 class Party:
     def __init__(self, party_id: str, sio: socketio.Server):
@@ -8,8 +9,11 @@ class Party:
         self.owner_sid = None
         self.sio = sio
         self.is_game_started = False
-        self.MIN_PLAYERS = 3
+        self.mode = GameMode.DRAWINGS
+        self.MIN_PLAYERS = 1 # for dev purposes only, TODO: switch to 3 in production
         self.MAX_PLAYERS = 10
+        self.game = Game(party_id, self.mode)
+        
 
     def add_player(self, sid: str, nickname: str):
         if sid in self.players:
@@ -47,9 +51,18 @@ class Party:
             return {'error': 'Not enough players to start the game.'}
         if self.get_players_count() > self.MAX_PLAYERS:
             return {'error': 'Too many players to start the game.'}
+        self.game.init(self.get_players_count())
         self.is_game_started = True
-        self.sio.emit('game_started', to=self.party_id)
+        self.sio.emit('game_initialized', to=self.party_id)
         return
+
+    def player_loaded(self, sid: str):
+        loaded_players, num_players = self.game.player_loaded(sid)
+        self.sio.emit('player_loaded', {'numLoaded': loaded_players, 'numPlayers': num_players}, to=self.party_id)
+        return (loaded_players, num_players)
+
+    def is_player_loaded(self, sid: str) -> bool:
+        return self.game.is_player_loaded(sid)
 
     def get_player_list(self):
         player_list = [{'sid': sid, 'nickname': nickname} for sid, nickname in self.players.items()]
