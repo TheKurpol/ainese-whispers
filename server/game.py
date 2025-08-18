@@ -8,45 +8,66 @@ class GameMode(Enum):
     STORY = "story"
 
 class Game:
-    def __init__(self, party_id: str, mode: GameMode):
+    def __init__(self, party_id: str):
         self.party_id = party_id
-        self.mode = mode
-        self.num_players = None
         self.loaded_players = []
         self.loading_timer = None
         self.game_started = False
 
     def init(self, num_players: int):
         self.num_players = num_players
-        print(f'Initializing {self.mode.value} game for party {self.party_id}')
+        self.loading_timer = eventlet.spawn_after(PLAYER_WAIT_TIME, self.start)
+        print(f'Initializing game for party {self.party_id}')
 
     def start(self):
-        print("[DEBUG] start() called")
         if self.game_started:
-            print("[DEBUG] Game already started, skipping.")
             return
+        if len(self.loaded_players) < 3: # TODO: Replace with const
+            # TODO: Request game deletion
+            pass
         self.game_started = True
-        if self.loading_timer:
-            print("[DEBUG] Cancelling timer in start().")
-            self.loading_timer.kill()
-            self.loading_timer = None
-        print(f'Game started for party {self.party_id} in mode {self.mode.value}')
+        print(f'Game started for party {self.party_id}')
+        # TODO: Start game logic here
+        self.shuffle_players()
+        self.next_turn()
 
     def player_loaded(self, sid: str) -> tuple[int, int]:
         if sid not in self.loaded_players:
             self.loaded_players.append(sid)
-        print(f'Player {sid} loaded in {self.mode.value} game for party {self.party_id}')
+        print(f'Player {sid} loaded in game for party {self.party_id}')
         print(f'{len(self.loaded_players)}/{self.num_players} players loaded')
-        if not self.loading_timer and not self.game_started:
-            print("[DEBUG] Starting loading timer.")
-            self.loading_timer = eventlet.spawn_after(PLAYER_WAIT_TIME, self.start)
         if len(self.loaded_players) == self.num_players and not self.game_started:
-            print("[DEBUG] All players loaded, starting game immediately.")
+            if self.loading_timer is not None:
+                self.loading_timer.kill()
+                self.loading_timer = None
             self.start()
         return (len(self.loaded_players), self.num_players)
 
     def is_player_loaded(self, sid: str) -> bool:
         return sid in self.loaded_players
+    
+    # Virtual methods
+    def shuffle_players(self):
+        raise NotImplementedError("This method should be implemented in subclasses")
+    def next_turn(self):
+        raise NotImplementedError("This method should be implemented in subclasses")
 
-# TODO: Don't run timer when it is already running (fixing)
-# TODO: Don't make loading_timer.kill() take forever because game won't start
+# TODO: Delete player from game and lobby when they disconnect
+
+class DrawingGame(Game):
+    def __init__(self, party_id: str):
+        super().__init__(party_id)
+        # Additional initialization for drawing game
+    def shuffle_players(self):
+        print("test")
+    def next_turn(self):
+        pass
+
+class StoryGame(Game):
+    def __init__(self, party_id: str):
+        super().__init__(party_id)
+        # Additional initialization for story game
+    def shuffle_players(self):
+        pass
+    def next_turn(self):
+        pass

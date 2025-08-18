@@ -8,12 +8,10 @@ class Party:
         self.messages = []
         self.owner_sid = None
         self.sio = sio
-        self.is_game_started = False
         self.mode = GameMode.DRAWINGS
         self.MIN_PLAYERS = 1 # for dev purposes only, TODO: switch to 3 in production
         self.MAX_PLAYERS = 10
-        self.game = Game(party_id, self.mode)
-        
+        self.game = DrawingGame(party_id)
 
     def add_player(self, sid: str, nickname: str):
         if sid in self.players:
@@ -45,14 +43,17 @@ class Party:
     
     def start_game(self):
         print(f'Starting game in party {self.party_id}')
-        if self.is_game_started:
+        if self.mode == GameMode.DRAWINGS:
+            self.game = DrawingGame(self.party_id)
+        elif self.mode == GameMode.STORY:
+            self.game = StoryGame(self.party_id)
+        if self.game.game_started:
             return {'error': 'Game has already started.'}
         if self.get_players_count() < self.MIN_PLAYERS:
             return {'error': 'Not enough players to start the game.'}
         if self.get_players_count() > self.MAX_PLAYERS:
             return {'error': 'Too many players to start the game.'}
         self.game.init(self.get_players_count())
-        self.is_game_started = True
         self.sio.emit('game_initialized', to=self.party_id)
         return
 
@@ -83,3 +84,6 @@ class Party:
         
         print(f'Sending player list to party {self.party_id}: {player_list}')
         self.sio.emit('send_player_list', {'list': player_list, 'ownerSid': owner_sid}, to=self.party_id)
+
+    def is_game_started(self):
+        return self.game.game_started

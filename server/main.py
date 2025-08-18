@@ -50,7 +50,7 @@ def join_party(sid, party_id, nickname):
     if party_id not in rooms:
         return {'message': 'Party does not exist.'}
     party = rooms[party_id]
-    if party.is_game_started:
+    if party.is_game_started():
         return {'message': 'Game has already started.'}
     clients_map[sid] = party_id
     sio.enter_room(sid, party_id)
