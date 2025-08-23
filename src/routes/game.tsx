@@ -1,8 +1,8 @@
 /* 
 STARTING AND HANDLING THE GAME
-1. Listen to 'game_start' event
-2. When navigated to game, emit something like 'game_loaded'
-3. In backend, wait until all players emitted 'game_loaded'
+1. Listen to 'game_start' event+
+2. When navigated to game, emit something like 'game_loaded'+
+3. In backend, wait until all players emitted 'game_loaded'+
 4. Then start the game, so select the first player(s) to write and emit appropriate events
 5. In frontend, listen to the event 'wait' or 'your_turn' etc. idk and show appropriate UI elements
 6. Of course, the backend should store info whose turn is it to prevent some cheating
@@ -14,8 +14,14 @@ STARTING AND HANDLING THE GAME
 */
 
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react';
-import { Waiting } from '@/components/gameComponents';
+import { useContext, useEffect, useState } from 'react'
+import {
+  DrawingsFirstRound,
+  DrawingsRound,
+  Waiting,
+  WaitingForNextRound,
+} from '@/components/gameComponents'
+import { SocketContext } from '@/lib/reactUtils'
 
 export const Route = createFileRoute('/game')({
   component: Game,
@@ -23,11 +29,29 @@ export const Route = createFileRoute('/game')({
 
 function Game() {
   // TODO: Think how to display appropriate components according to game state
-  const [gameState, setGameState] = useState('waiting');
+  const [gameState, setGameState] = useState('waiting')
+  const socket = useContext(SocketContext)
+
+  useEffect(() => {
+    if (!socket) return
+
+    socket.on('game_state_update', (newState) => {
+      setGameState(newState)
+    })
+
+    return () => {
+      socket.off('game_state_update')
+    }
+  }, [socket])
+
   return (
     <div>
-      {gameState === 'waiting' && <Waiting/>}
-      {/* Add other game states and their corresponding components here */}
+      {gameState === 'waiting' && <Waiting />}
+      {gameState === 'drawingsFirstRound' && <DrawingsFirstRound />}
+      {gameState === 'drawingsRound' && <DrawingsRound />}
+      {gameState === 'waitForNextDrawingsRound' && (
+        <WaitingForNextRound message="Wait until AI generates all images" />
+      )}
     </div>
   )
 }

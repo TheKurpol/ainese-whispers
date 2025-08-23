@@ -11,7 +11,10 @@ class Party:
         self.mode = GameMode.DRAWINGS
         self.MIN_PLAYERS = 1 # for dev purposes only, TODO: switch to 3 in production
         self.MAX_PLAYERS = 10
-        self.game = DrawingGame(party_id)
+        self.game = DrawingGame(party_id, self.event_dispatcher)
+
+    def event_dispatcher(self, event_name: str, data: dict):
+        self.sio.emit(event_name, data, to=self.party_id)
 
     def add_player(self, sid: str, nickname: str):
         if sid in self.players:
@@ -44,9 +47,9 @@ class Party:
     def start_game(self):
         print(f'Starting game in party {self.party_id}')
         if self.mode == GameMode.DRAWINGS:
-            self.game = DrawingGame(self.party_id)
+            self.game = DrawingGame(self.party_id, self.event_dispatcher)
         elif self.mode == GameMode.STORY:
-            self.game = StoryGame(self.party_id)
+            self.game = StoryGame(self.party_id, self.event_dispatcher)
         if self.game.game_started:
             return {'error': 'Game has already started.'}
         if self.get_players_count() < self.MIN_PLAYERS:
@@ -87,3 +90,4 @@ class Party:
 
     def is_game_started(self):
         return self.game.game_started
+    
