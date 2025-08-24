@@ -116,5 +116,6 @@ def game_loaded(sid):
         return {'error': 'Player already loaded.'}
     num_loaded, num_players = party.player_loaded(sid)
     return {'numLoaded': num_loaded, 'numPlayers': num_players}
+
 if __name__ == '__main__':
     eventlet.wsgi.server(eventlet.listen(('', 5000)), app)

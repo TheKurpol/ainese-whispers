@@ -13,7 +13,17 @@ class Party:
         self.MAX_PLAYERS = 10
         self.game = DrawingGame(party_id, self.event_dispatcher)
 
-    def event_dispatcher(self, event_name: str, data: dict):
+    def event_dispatcher(self, event_name: str, data=None):
+        if event_name == 'remove_disconnected_players':
+            if not isinstance(data, list):
+                return
+            self.remove_disconnected_players(data)
+            return
+        if event_name == 'ask_for_input':
+            self.sio.emit(event_name, to=self.party_id, callback=self.submit_input)
+        if data is None:
+            self.sio.emit(event_name, to=self.party_id)
+            return
         self.sio.emit(event_name, data, to=self.party_id)
 
     def add_player(self, sid: str, nickname: str):
@@ -35,8 +45,15 @@ class Party:
                 print(f'New owner set: {self.players[self.owner_sid]}')
             else:
                 self.owner_sid = None
+        self.sio.leave_room(sid, self.party_id)
         self.send_player_list()
         return {'message': f'Player left the party.', 'error': None}
+
+    def remove_disconnected_players(self, connected_sids: list[str]):
+        for sid in self.players.keys():
+            if sid not in connected_sids:
+                print(f'Removing disconnected player: {self.players[sid]}')
+                self.remove_player(sid)
 
     def set_owner(self, sid: str):
         if sid in self.players:
@@ -59,6 +76,14 @@ class Party:
         self.game.init(self.get_players_count())
         self.sio.emit('game_initialized', to=self.party_id)
         return
+    
+    def submit_input(self, sid: str, player_input: str):
+        if not self.game.game_started:
+            return {'error': 'Game has not started yet.'}
+        if sid not in self.players:
+            return {'error': 'Player not in party.'}
+        print(f'Player {self.players[sid]} submitted input: {player_input}')
+        self.game.submit_input(sid, player_input)
 
     def player_loaded(self, sid: str):
         loaded_players, num_players = self.game.player_loaded(sid)

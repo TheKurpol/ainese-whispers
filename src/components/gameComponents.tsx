@@ -38,14 +38,16 @@ export function DrawingsFirstRound(): ReactNode {
   useEffect(() => {
     if (!socket) return
 
-    socket.on('ask_for_input', () => {
-      socket.emit('submit_input', input)
+    socket.on('ask_for_input', (callback) => {
+      if (socket.id !== undefined) {
+        callback(socket.id, input)
+      }
     })
 
     return () => {
       socket.off('ask_for_input')
     }
-  }, [socket])
+  }, [socket, input])
 
   return (
     <div>
@@ -66,14 +68,16 @@ export function DrawingsRound(): ReactNode {
   useEffect(() => {
     if (!socket) return
 
-    socket.on('ask_for_input', () => {
-      socket.emit('submit_input', input)
+    socket.on('ask_for_input', (callback) => {
+      if (socket.id !== undefined) {
+        callback(socket.id, input)
+      }
     })
 
     return () => {
       socket.off('ask_for_input')
     }
-  }, [socket])
+  }, [socket, input])
 
   return (
     <div>
