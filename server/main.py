@@ -117,5 +117,16 @@ def game_loaded(sid):
     num_loaded, num_players = party.player_loaded(sid)
     return {'numLoaded': num_loaded, 'numPlayers': num_players}
 
+@sio.event
+def ask_for_image(sid):
+    party_id = clients_map.get(sid)
+    if not party_id or party_id not in rooms:
+        return {'error': 'You are not in a party'}
+    party = rooms[party_id]
+    if not party.is_game_started():
+        return {'error': 'Game has not started yet'}
+    image, hint = party.provide_image_and_hint(sid)
+    return {'image': image, 'hint': hint}
+
 if __name__ == '__main__':
     eventlet.wsgi.server(eventlet.listen(('', 5000)), app) # type: ignore

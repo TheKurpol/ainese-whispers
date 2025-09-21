@@ -34,7 +34,6 @@ export function Waiting(): ReactNode {
 }
 
 export function DrawingsFirstRound(): ReactNode {
-  // TODO: make player able to select the 3 most important words from the sentence
   const socket = useContext(SocketContext)
   const [input, setInput] = useState('')
   const [hint, setHint] = useState('')
@@ -51,7 +50,7 @@ export function DrawingsFirstRound(): ReactNode {
     return () => {
       socket.off('ask_for_input')
     }
-  }, [socket, input])
+  }, [socket, input, hint])
 
   return (
     <div className="flex flex-col items-center justify-center gap-4">
@@ -86,6 +85,8 @@ export function DrawingsRound({
   const socket = useContext(SocketContext)
   const [input, setInput] = useState('')
   const [hint, setHint] = useState('')
+  const [image, setImage] = useState<string | null>(null)
+  const [receivedHint, setReceivedHint] = useState('missingo')
 
   useEffect(() => {
     if (!socket) return
@@ -99,11 +100,24 @@ export function DrawingsRound({
     return () => {
       socket.off('ask_for_input')
     }
-  }, [socket, input])
+  }, [socket, input, hint])
+
+  useEffect(() => {
+    if (!socket) return
+    socket.emit('ask_for_image', (data) => {
+      if ('error' in data) {
+        return
+      }
+      setImage(data.image)
+      setReceivedHint(data.hint)
+    })
+  }, [socket])
 
   return (
     <div className="flex flex-col items-center justify-center gap-4">
       <p className="text-2xl font-bold">Try to describe the picture</p>
+      {image && <img src={image} className="max-h-96" />}
+      <p className="text-lg">Hint: {receivedHint}</p>
       <input
         type="text"
         value={input}

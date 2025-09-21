@@ -26,6 +26,11 @@ export interface Player {
   nickname: string;
 }
 
+export interface NewRoundData {
+  image: string;
+  hint: string;
+}
+
 export interface ServerToClientEvents {
   welcome: (payload: WelcomeMessagePayload) => void;
   send_player_list: (payload: PlayerListPayload) => void;
@@ -45,5 +50,5 @@ export interface ClientToServerEvents {
   kick_player: (partyId: string, target_sid: string) => void;
   start_game: (partyId: string, callback: (error: ErrorMessage | null) => void) => void;
   game_loaded: (callback: (payload: PlayerLoadedPayload | ErrorMessage) => void) => void;
-  ask_for_image: (callback: (image: any, hint: string) => void) => void;
+  ask_for_image: (callback: (data: NewRoundData | ErrorMessage) => void) => void;
 }

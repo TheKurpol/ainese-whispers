@@ -106,7 +106,7 @@ class DrawingGame(Game):
         self.submit_timer = eventlet.spawn_after(self.MAX_SUBMIT_WAIT_TIME, self.init_next_round)
     def init_next_round(self):
         for sid in self.shuffled_players:
-            if sid not in self.player_inputs:
+            if sid not in self.player_inputs or self.player_inputs[sid] == "":
                 self.stories[self.shuffled_players.index(sid)-self.current_round].append(
                     self.stories[self.shuffled_players.index(sid)-self.current_round][2 * (self.current_round - 1)] if self.current_round > 0 else self.LOST_SENTENCE
                 )
