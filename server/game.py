@@ -1,6 +1,8 @@
 import eventlet
+from eventlet import tpool
 from enum import Enum
 import random
+from model import generate_images
 
 PLAYER_WAIT_TIME = 2
 
@@ -20,8 +22,10 @@ class Game:
         self.shuffled_players = []
         self.awaited_players = []
         self.player_inputs = {}
+        self.player_images = {}
+        self.player_hints = {}
         self.stories = []
-        self.ROUND_TIME = 40 # TODO: Make round time configurable
+        self.ROUND_TIME = 15 # TODO: Make round time configurable
         self.ROUNDS = 0 # Later we'll make it configurable in the lobby
         self.MAX_SUBMIT_WAIT_TIME = 3
         self.LOST_SENTENCE = "Player went to buy a milk"
@@ -59,14 +63,16 @@ class Game:
         return (len(self.loaded_players), self.num_players)
     
 
-    def submit_input(self, sid: str, player_input: str):
+    def submit_input(self, sid: str, player_input: str, hint: str):
         self.player_inputs[sid] = player_input
+        self.player_hints[sid] = hint
         if sid in self.awaited_players:
             self.awaited_players.remove(sid)
         if len(self.awaited_players) == 0 and self.submit_timer is not None:
             self.submit_timer.kill()
             self.submit_timer = None
             self.init_next_round()
+        # TODO: Send hint to next player
 
     def is_player_loaded(self, sid: str) -> bool:
         return sid in self.loaded_players
@@ -92,24 +98,45 @@ class DrawingGame(Game):
         self.event_dispatcher('game_state_update', 'drawingsFirstRound')
         eventlet.spawn_after(self.ROUND_TIME, self.finish_round)
     def finish_round(self):
+        self.player_inputs = {}
+        self.player_images = {}
+        self.player_hints = {}
         self.event_dispatcher('ask_for_input')
         self.awaited_players = self.loaded_players.copy()
         self.submit_timer = eventlet.spawn_after(self.MAX_SUBMIT_WAIT_TIME, self.init_next_round)
     def init_next_round(self):
-        self.event_dispatcher('game_state_update', 'waitForNextDrawingsRound')
         for sid in self.shuffled_players:
             if sid not in self.player_inputs:
-                self.stories[self.shuffled_players.index(sid)-self.current_round].append(self.stories[self.shuffled_players.index(sid)-self.current_round][2 * (self.current_round - 1)] if self.current_round > 0 else self.LOST_SENTENCE)
+                self.stories[self.shuffled_players.index(sid)-self.current_round].append(
+                    self.stories[self.shuffled_players.index(sid)-self.current_round][2 * (self.current_round - 1)] if self.current_round > 0 else self.LOST_SENTENCE
+                )
             else:
                 self.stories[self.shuffled_players.index(sid)-self.current_round].append(self.player_inputs[sid])
         self.current_round += 1
         if self.current_round < self.ROUNDS:
-            self.next_round()
+            self.event_dispatcher('game_state_update', 'waitForNextDrawingsRound')
+            prompts = [self.player_inputs.get(sid, self.LOST_SENTENCE) for sid in self.shuffled_players]
+            eventlet.spawn_n(self.init_generating_images, prompts)
         else:
             print(self.stories)
+            self.summary()
+    def init_generating_images(self, prompts):
+        generate_images(prompts, self.process_images)
+    def process_images(self, images):
+        print(f'Generated {len(images)} images for party {self.party_id}')
+        for i, sid in enumerate(self.shuffled_players):
+            self.player_images[sid] = images[i]
+            self.stories[self.shuffled_players.index(sid)-(self.current_round-1)].append(images[i])
+        self.next_round()
     def next_round(self):
-        self.event_dispatcher('game_state_update', 'drawingsRound')
+        if self.current_round == self.ROUNDS - 1:
+            self.event_dispatcher('game_state_update', 'drawingsLastRound')
+        else:
+            self.event_dispatcher('game_state_update', 'drawingsRound')
         eventlet.spawn_after(self.ROUND_TIME, self.finish_round)
+    def summary(self):
+        self.event_dispatcher('game_state_update', 'drawingsSummary')
+    
 
 class StoryGame(Game):
     def __init__(self, party_id: str, event_dispatcher):

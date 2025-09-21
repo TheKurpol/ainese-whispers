@@ -32,7 +32,7 @@ export interface ServerToClientEvents {
   game_initialized: () => void;
   player_loaded: (payload: PlayerLoadedPayload | ErrorMessage) => void;
   game_state_update: (newState: string) => void;
-  ask_for_input: (callback: (sid: string,player_input: string) => void) => void;
+  ask_for_input: (callback: (sid: string, player_input: string, player_hint: string) => void) => void;
 }
 
 export interface ClientToServerEvents {
@@ -45,4 +45,5 @@ export interface ClientToServerEvents {
   kick_player: (partyId: string, target_sid: string) => void;
   start_game: (partyId: string, callback: (error: ErrorMessage | null) => void) => void;
   game_loaded: (callback: (payload: PlayerLoadedPayload | ErrorMessage) => void) => void;
+  ask_for_image: (callback: (image: any, hint: string) => void) => void;
 }

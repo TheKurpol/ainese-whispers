@@ -118,4 +118,4 @@ def game_loaded(sid):
     return {'numLoaded': num_loaded, 'numPlayers': num_players}
 
 if __name__ == '__main__':
-    eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
+    eventlet.wsgi.server(eventlet.listen(('', 5000)), app) # type: ignore

@@ -77,13 +77,14 @@ class Party:
         self.sio.emit('game_initialized', to=self.party_id)
         return
     
-    def submit_input(self, sid: str, player_input: str):
+    def submit_input(self, sid: str, player_input: str, player_hint: str):
+        # TODO: Get words selected by player in order to display them in the next round
         if not self.game.game_started:
             return {'error': 'Game has not started yet.'}
         if sid not in self.players:
             return {'error': 'Player not in party.'}
         print(f'Player {self.players[sid]} submitted input: {player_input}')
-        self.game.submit_input(sid, player_input)
+        self.game.submit_input(sid, player_input, player_hint)
 
     def player_loaded(self, sid: str):
         loaded_players, num_players = self.game.player_loaded(sid)

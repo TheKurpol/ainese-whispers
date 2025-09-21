@@ -3,10 +3,12 @@ import { useContext, useEffect, useState } from 'react'
 import {
   DrawingsFirstRound,
   DrawingsRound,
+  DrawingsSummary,
   Waiting,
   WaitingForNextRound,
 } from '@/components/gameComponents'
 import { SocketContext } from '@/lib/reactUtils'
+import { Card } from '@/components/ui/card'
 
 export const Route = createFileRoute('/game')({
   component: Game,
@@ -30,13 +32,19 @@ function Game() {
   }, [socket])
 
   return (
-    <div>
-      {gameState === 'waiting' && <Waiting />}
-      {gameState === 'drawingsFirstRound' && <DrawingsFirstRound />}
-      {gameState === 'drawingsRound' && <DrawingsRound />}
-      {gameState === 'waitForNextDrawingsRound' && (
-        <WaitingForNextRound message="Wait until AI generates all images" />
-      )}
+    <div className="flex justify-center">
+      <Card>
+        {gameState === 'waiting' && <Waiting />}
+        {gameState === 'drawingsFirstRound' && <DrawingsFirstRound />}
+        {gameState === 'drawingsRound' && <DrawingsRound isLastRound={false} />}
+        {gameState === 'drawingsLastRound' && (
+          <DrawingsRound isLastRound={true} />
+        )}
+        {gameState === 'waitForNextDrawingsRound' && (
+          <WaitingForNextRound message="Wait until AI generates all images" />
+        )}
+        {gameState === 'drawingsSummary' && <DrawingsSummary />}
+      </Card>
     </div>
   )
 }
