@@ -3,6 +3,7 @@ import torch
 import eventlet
 from eventlet import tpool
 from eventlet.queue import Queue
+from utils import convert_image_to_base64
 
 class ImageGenerator:
     def __init__(self):
@@ -15,11 +16,12 @@ class ImageGenerator:
         self.pipe.to("cuda")
         # if using torch < 2.0
         # self.pipe.enable_xformers_memory_efficient_attention()
-        self.negative_prompt = "ugly, blurry, poor quality"
+        self.negative_prompt = "ugly, blurry, poor quality, low details, not many objects, empty, lacking of things"
         self.images = {}
 
     def generate_image(self, prompt: str):
         image = self.pipe(prompt=prompt, negative_prompt=self.negative_prompt).images[0] # type: ignore
+        image = convert_image_to_base64(image)
         return image
 
 image_generator = ImageGenerator()

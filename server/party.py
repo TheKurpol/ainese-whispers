@@ -87,21 +87,21 @@ class Party:
         self.game.submit_input(sid, player_input, player_hint)
     
     def provide_image_and_hint(self, sid: str):
+        if type(self.game) is not DrawingGame:
+            return {'error': 'Current game mode does not support images.'}
         if not self.game.game_started:
             return {'error': 'Game has not started yet.'}
         if sid not in self.players:
             return {'error': 'Player not in party.'}
         if sid not in self.game.player_images:
             return {'error': 'Player has not submitted an image yet.'}
-        image = self.game.player_images[sid]
-        hint = self.game.player_hints.get(sid, "")
-        # Convert image to base64 string
-        import io
-        import base64
-        buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-        return f'data:image/png;base64,{img_str}', hint
+        image, hint = self.game.give_image_and_hint(sid)
+        return image, hint
+    
+    def get_story(self):
+        if self.is_game_started():
+            return {'error': 'Game is still in progress.'}
+        return self.game.get_story()
 
     def player_loaded(self, sid: str):
         loaded_players, num_players = self.game.player_loaded(sid)

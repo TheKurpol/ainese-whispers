@@ -51,4 +51,6 @@ export interface ClientToServerEvents {
   start_game: (partyId: string, callback: (error: ErrorMessage | null) => void) => void;
   game_loaded: (callback: (payload: PlayerLoadedPayload | ErrorMessage) => void) => void;
   ask_for_image: (callback: (data: NewRoundData | ErrorMessage) => void) => void;
+  ask_for_story: (callback: (story: Array<Array<string>> | ErrorMessage) => void) => void;
+  leave_game: () => void;
 }

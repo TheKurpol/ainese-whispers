@@ -25,7 +25,7 @@ class Game:
         self.player_images = {}
         self.player_hints = {}
         self.stories = []
-        self.ROUND_TIME = 15 # TODO: Make round time configurable
+        self.ROUND_TIME = 45 # TODO: Make round time configurable
         self.ROUNDS = 0 # Later we'll make it configurable in the lobby
         self.MAX_SUBMIT_WAIT_TIME = 3
         self.LOST_SENTENCE = "Player went to buy a milk"
@@ -76,6 +76,9 @@ class Game:
 
     def is_player_loaded(self, sid: str) -> bool:
         return sid in self.loaded_players
+    
+    def get_story(self):
+        return self.stories
 
     # abstract methods
     def shuffle_players(self):
@@ -118,7 +121,6 @@ class DrawingGame(Game):
             prompts = [self.player_inputs.get(sid, self.LOST_SENTENCE) for sid in self.shuffled_players]
             eventlet.spawn_n(self.init_generating_images, prompts)
         else:
-            print(self.stories)
             self.summary()
     def init_generating_images(self, prompts):
         generate_images(prompts, self.process_images)
@@ -128,6 +130,9 @@ class DrawingGame(Game):
             self.player_images[sid] = images[i]
             self.stories[self.shuffled_players.index(sid)-(self.current_round-1)].append(images[i])
         self.next_round()
+    def give_image_and_hint(self, sid: str):
+        target_sid = self.shuffled_players[(self.shuffled_players.index(sid) - 1) % self.num_players]
+        return self.player_images.get(target_sid, None), self.player_hints.get(target_sid, "")
     def next_round(self):
         if self.current_round == self.ROUNDS - 1:
             self.event_dispatcher('game_state_update', 'drawingsLastRound')
@@ -135,6 +140,7 @@ class DrawingGame(Game):
             self.event_dispatcher('game_state_update', 'drawingsRound')
         eventlet.spawn_after(self.ROUND_TIME, self.finish_round)
     def summary(self):
+        self.game_started = False
         self.event_dispatcher('game_state_update', 'drawingsSummary')
     
 

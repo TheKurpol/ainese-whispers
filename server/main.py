@@ -128,5 +128,29 @@ def ask_for_image(sid):
     image, hint = party.provide_image_and_hint(sid)
     return {'image': image, 'hint': hint}
 
+@sio.event
+def ask_for_story(sid):
+    party_id = clients_map.get(sid)
+    if not party_id or party_id not in rooms:
+        return {'error': 'You are not in a party'}
+    party = rooms[party_id]
+    if party.is_game_started():
+        return {'error': 'Game is still in progress.'}
+    story = party.get_story()
+    return story
+
+@sio.event
+def leave_game(sid):
+    party_id = clients_map.get(sid)
+    if not party_id or party_id not in rooms:
+        return {'error': 'You are not in a party'}
+    party = rooms[party_id]
+    party.remove_player(sid)
+    sio.leave_room(sid, party_id)
+    clients_map.pop(sid, None)
+    print(f'Client {sid} left party {party_id}')
+    print(f'List of players in party {party_id}: {party.get_player_list()}')
+    return {'success': True}
+
 if __name__ == '__main__':
     eventlet.wsgi.server(eventlet.listen(('', 5000)), app) # type: ignore
