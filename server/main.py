@@ -18,7 +18,6 @@ clients_map: dict[str, str] = {}
 @sio.event
 def connect(sid, environ):
     print(f'Client connected: {sid}')
-    sio.emit('welcome', {'content': 'I am always here for you'}, to=sid)
 
 @sio.event
 def disconnect(sid):
@@ -42,7 +41,6 @@ def create_party(sid):
 def check_party_exists(sid, party_id):
     print(f'Checking existence of party: {party_id}')
     exists = party_id in rooms
-    print(exists)
     return exists
 
 @sio.event

@@ -25,7 +25,7 @@ class Game:
         self.player_images = {}
         self.player_hints = {}
         self.stories = []
-        self.ROUND_TIME = 45 # TODO: Make round time configurable
+        self.ROUND_TIME = 30 # TODO: Make round time configurable
         self.ROUNDS = 0 # Later we'll make it configurable in the lobby
         self.MAX_SUBMIT_WAIT_TIME = 3
         self.LOST_SENTENCE = "Player went to buy a milk"

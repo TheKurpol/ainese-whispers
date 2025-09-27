@@ -14,8 +14,6 @@ class ImageGenerator:
             variant="fp16"
         )
         self.pipe.to("cuda")
-        # if using torch < 2.0
-        # self.pipe.enable_xformers_memory_efficient_attention()
         self.negative_prompt = "ugly, blurry, poor quality, low details, not many objects, empty, lacking of things"
         self.images = {}
 

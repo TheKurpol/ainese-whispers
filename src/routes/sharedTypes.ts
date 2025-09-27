@@ -36,7 +36,6 @@ export interface NewRoundData {
 }
 
 export interface ServerToClientEvents {
-  welcome: (payload: WelcomeMessagePayload) => void;
   send_player_list: (payload: PlayerListPayload) => void;
   game_initialized: () => void;
   player_loaded: (payload: PlayerLoadedPayload | ErrorMessage) => void;

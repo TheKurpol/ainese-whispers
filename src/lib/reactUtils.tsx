@@ -21,21 +21,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const newSocket: Socket<ServerToClientEvents, ClientToServerEvents> =
       io(SOCKET_SERVER_URL)
-    newSocket.on('connect', () => {
-      console.log('Connected to Socket.IO server')
-    })
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from Socket.IO server')
-    })
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket.IO connection error:', error)
-    })
-    newSocket.on('welcome', (data) => {
-      console.log(
-        'Now I am everywhere on the website Lol the message to you:',
-        data.content,
-      )
-    })
 
     setSocket(newSocket)
 

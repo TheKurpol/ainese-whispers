@@ -81,7 +81,6 @@ function Lobby() {
 
   useEffect(() => {
     function handlePlayerList(payload: PlayerListPayload) {
-      console.log('Received player list:', payload)
       if (
         socket &&
         !payload.list.some((player: Player) => player.sid === socket.id)

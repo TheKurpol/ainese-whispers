@@ -224,14 +224,11 @@ export function DrawingsSummary(): ReactNode {
 
   useEffect(() => {
     if (!socket) return
-    console.log('Fetching story')
 
     socket.emit('ask_for_story', (data) => {
-      console.log(data)
       if ('error' in data) {
         return
       }
-      console.log(data)
       setStory(data)
     })
 
