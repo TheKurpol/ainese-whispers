@@ -77,6 +77,9 @@ class Game:
     def is_player_loaded(self, sid: str) -> bool:
         return sid in self.loaded_players
     
+    def get_timer(self):
+        return self.ROUND_TIME
+    
     def get_story(self):
         return self.stories
 

@@ -33,8 +33,9 @@ def create_party(sid):
     new_party_id = generate_random_party_id()
     if new_party_id in rooms:
         return {'error': f'Party {new_party_id} already exists!'}
-    rooms[new_party_id] = Party(party_id=new_party_id, sio=sio)
+    rooms[new_party_id] = Party(party_id=new_party_id, sio=sio, rooms_ref=rooms)
     print(f'Party {new_party_id} created successfully!')
+    print(f'Current parties: {list(rooms.keys())}')
     return {'partyId': new_party_id, 'error': None}
 
 @sio.event
@@ -116,6 +117,17 @@ def game_loaded(sid):
         return {'error': 'Player already loaded.'}
     num_loaded, num_players = party.player_loaded(sid)
     return {'numLoaded': num_loaded, 'numPlayers': num_players}
+
+@sio.event
+def ask_for_timer(sid):
+    party_id = clients_map.get(sid)
+    if not party_id or party_id not in rooms:
+        return {'error': 'You are not in a party'}
+    party = rooms[party_id]
+    if not party.is_game_started():
+        return {'error': 'Game has not started yet'}
+    timer = party.get_timer()
+    return {'timer': timer}
 
 @sio.event
 def ask_for_image(sid):

@@ -26,6 +26,10 @@ export interface Player {
   nickname: string;
 }
 
+export interface TimerData {
+  timer: number;
+}
+
 export interface NewRoundData {
   image: string;
   hint: string;
@@ -50,6 +54,7 @@ export interface ClientToServerEvents {
   kick_player: (partyId: string, target_sid: string) => void;
   start_game: (partyId: string, callback: (error: ErrorMessage | null) => void) => void;
   game_loaded: (callback: (payload: PlayerLoadedPayload | ErrorMessage) => void) => void;
+  ask_for_timer: (callback: (timer: TimerData | ErrorMessage) => void) => void;
   ask_for_image: (callback: (data: NewRoundData | ErrorMessage) => void) => void;
   ask_for_story: (callback: (story: Array<Array<string>> | ErrorMessage) => void) => void;
   leave_game: () => void;

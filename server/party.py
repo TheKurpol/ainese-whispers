@@ -2,12 +2,13 @@ import socketio
 from game import *
 
 class Party:
-    def __init__(self, party_id: str, sio: socketio.Server):
+    def __init__(self, party_id: str, sio: socketio.Server, rooms_ref: dict[str, 'Party']):
         self.party_id = party_id
         self.players = {}
         self.messages = []
         self.owner_sid = None
         self.sio = sio
+        self.rooms_ref = rooms_ref
         self.mode = GameMode.DRAWINGS
         self.MIN_PLAYERS = 1 # for dev purposes only, TODO: switch to 3 in production
         self.MAX_PLAYERS = 10
@@ -46,6 +47,10 @@ class Party:
             else:
                 self.owner_sid = None
         self.sio.leave_room(sid, self.party_id)
+        if not self.players:
+            print(f'Party {self.party_id} is now empty and will be deleted.')
+            del self.rooms_ref[self.party_id]
+            return {'message': 'Party deleted as it became empty.', 'error': None}
         self.send_player_list()
         return {'message': f'Player left the party.', 'error': None}
 
@@ -85,6 +90,11 @@ class Party:
         print(f'Player {self.players[sid]} submitted input: {player_input}')
         print(f'Player {self.players[sid]} submitted hint: {player_hint}')
         self.game.submit_input(sid, player_input, player_hint)
+
+    def get_timer(self):
+        if not self.game.game_started:
+            return {'error': 'Game has not started yet.'}
+        return self.game.get_timer()
     
     def provide_image_and_hint(self, sid: str):
         if type(self.game) is not DrawingGame:
