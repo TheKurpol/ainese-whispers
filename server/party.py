@@ -89,6 +89,8 @@ class Party:
             return {'error': 'Player not in party.'}
         print(f'Player {self.players[sid]} submitted input: {player_input}')
         print(f'Player {self.players[sid]} submitted hint: {player_hint}')
+        if len(player_hint) > 20:
+            player_hint = player_hint[:20]
         self.game.submit_input(sid, player_input, player_hint)
 
     def get_timer(self):
