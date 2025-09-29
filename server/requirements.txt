@@ -2,3 +2,7 @@ eventlet
 python-socketio
 flask
 flask_cors
+diffusers
+torch
+io
+base64
