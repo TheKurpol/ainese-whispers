@@ -6,7 +6,7 @@ import type { ErrorMessage, Player, PlayerListPayload } from './sharedTypes'
 import { SocketContext } from '@/lib/reactUtils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar } from '@/components/ui/avatar'
 
 const PartyIdContext = createContext<string>('')
 
